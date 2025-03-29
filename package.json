@@ -1,0 +1,87 @@
+{
+  "name": "context-code",
+  "displayName": "Context Code",
+  "description": "A VS Code extension that allows you to concatenate code from multiple files in your project into a single context, making it easier to send to an AI for analysis, debugging, or suggestions.",
+  "version": "0.2.0",
+  "publisher": "AndyGeek",
+  "license": "MIT",
+  "icon": "resources/logo.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andygeek/context-code.git"
+  },
+  "engines": {
+    "vscode": "^1.98.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "projectContextBuilder",
+          "title": "Project Context",
+          "icon": "resources/logo.png"
+        }
+      ]
+    },
+    "views": {
+      "projectContextBuilder": [
+        {
+          "id": "projectFilesView",
+          "name": "Select Files",
+          "type": "tree",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "projectContextBuilder.generate",
+        "title": "Generate Project Context",
+        "icon": "$(file-code)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "projectContextBuilder.generate",
+          "when": "view == projectFilesView",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Project Context Builder",
+      "properties": {
+        "projectContextBuilder.ignorePatterns": {
+          "type": "array",
+          "default": [".git", "node_modules", ".vscode", "*.log", "dist", "build"],
+          "description": "Array of glob patterns or relative paths to ignore when generating context. Uses forward slashes '/'."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.98.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.28.0",
+    "@typescript-eslint/parser": "^8.28.0",
+    "eslint": "^9.23.0",
+    "typescript": "^5.8.2",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1"
+  }
+}
