@@ -31,7 +31,7 @@ function normalizeIgnorePatterns(basePath: string, patterns: string[]): string[]
         }
 
         if (relativePattern === '.' || !relativePattern) {
-             continue;
+            continue;
         }
         normalized.add(relativePattern.replace(/\\/g, '/'));
     }
@@ -46,14 +46,13 @@ function normalizeIgnorePatterns(basePath: string, patterns: string[]): string[]
                 }
             }
             if (!covered) {
-                 normalized.add(p);
+                normalized.add(p);
             }
         }
     });
     console.log("Normalized ignore patterns:", Array.from(normalized));
     return Array.from(normalized);
 }
-
 
 function shouldIgnore(relativePath: string, normalizedIgnores: string[]): boolean {
     const normRelativePath = path.normalize(relativePath).replace(/\\/g, '/');
@@ -64,9 +63,16 @@ function shouldIgnore(relativePath: string, normalizedIgnores: string[]): boolea
         if (normRelativePath === ignore) return true;
         if (ignore.endsWith('/') && normRelativePath.startsWith(ignore)) return true;
         if (!ignore.endsWith('/') && normRelativePath.startsWith(ignore + '/')) return true;
-
     }
     return false;
+}
+
+function shouldIgnoreFileByExtension(filePath: string): boolean {
+    const ignoredExts = new Set([
+        '.ico', '.png', '.jpg', '.jpeg', '.gif',
+        '.svg', '.bmp', '.tiff', '.webp'
+    ]);
+    return ignoredExts.has(path.extname(filePath).toLowerCase());
 }
 
 async function readFileContent(fileUri: vscode.Uri): Promise<string | null> {
@@ -117,6 +123,9 @@ async function walkDirectory(
             }
 
             if (type === vscode.FileType.File) {
+                if (shouldIgnoreFileByExtension(currentUri.fsPath)) {
+                    continue;
+                }
                 if (!processedFiles.has(relativePathStd)) {
                     const content = await readFileContent(currentUri);
                     if (content !== null) {
@@ -169,7 +178,7 @@ export async function generateContext(
             const relativePath = path.relative(workspaceRoot, itemPath);
             const relativePathStd = relativePath.replace(/\\/g, '/');
 
-            if (shouldIgnore(relativePathStd, normalizedIgnores)) {
+            if (shouldIgnore(relativePathStd, normalizedIgnores) || shouldIgnoreFileByExtension(itemPath)) {
                 processedCount++;
                 progress.report({ increment: (processedCount / totalSelected) * 80, message: `Ignoring ${path.basename(itemPath)}...` });
                 continue;
@@ -181,6 +190,11 @@ export async function generateContext(
                 const stats = await vscode.workspace.fs.stat(itemUri);
 
                 if (stats.type === vscode.FileType.File) {
+                    if (shouldIgnoreFileByExtension(itemPath)) {
+                        processedCount++;
+                        progress.report({ increment: (processedCount / totalSelected) * 80, message: `Ignoring ${path.basename(itemPath)}...` });
+                        continue;
+                    }
                     if (!processedFiles.has(relativePathStd)) {
                         const content = await readFileContent(itemUri);
                         if (content !== null) {
@@ -194,7 +208,7 @@ export async function generateContext(
                     await walkDirectory(itemUri, workspaceRoot, normalizedIgnores, outputCollector, processedFiles);
                 }
             } catch (error) {
-                 console.error(`Error processing ${itemPath}: ${error}`);
+                console.error(`Error processing ${itemPath}: ${error}`);
             }
             processedCount++;
         }
@@ -231,9 +245,9 @@ export async function generateContext(
                 });
 
                 if (success) {
-                     if (!targetEditor.document.isUntitled) {
-                         await targetEditor.document.save();
-                     }
+                    if (!targetEditor.document.isUntitled) {
+                        await targetEditor.document.save();
+                    }
                     await vscode.window.showTextDocument(targetEditor.document, {
                         viewColumn: targetEditor.viewColumn,
                         preview: false,
@@ -242,9 +256,8 @@ export async function generateContext(
                     generatedUri = targetEditor.document.uri;
                     vscode.window.showInformationMessage('Project context updated successfully.');
                 } else {
-                     throw new Error("Editor edit operation failed.");
+                    throw new Error("Editor edit operation failed.");
                 }
-
             } else {
                 const doc = await vscode.workspace.openTextDocument({
                     content: finalOutput,
@@ -252,12 +265,10 @@ export async function generateContext(
                 });
                 await vscode.window.showTextDocument(doc, { preview: false });
                 generatedUri = doc.uri;
-                const lastGeneratedContextUri = generatedUri;
                 vscode.window.showInformationMessage('Project context generated and opened.');
             }
             progress.report({ increment: 100, message: "Done!" });
             await new Promise(resolve => setTimeout(resolve, 500));
-
         } catch (error) {
             console.error(`Failed to display generated context: ${error}`);
             vscode.window.showErrorMessage(`Failed to display generated context: ${error}`);
