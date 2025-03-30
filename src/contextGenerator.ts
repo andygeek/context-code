@@ -31,20 +31,40 @@ function normalizeIgnorePatterns(basePath: string, patterns: string[]): string[]
         }
 
         if (relativePattern === '.' || !relativePattern) {
-            continue;
+             continue;
         }
         normalized.add(relativePattern.replace(/\\/g, '/'));
     }
+    const commonIgnores = ['.git/', 'node_modules/', '.vscode/'];
+    commonIgnores.forEach(p => {
+        if (!normalized.has(p)) {
+            let covered = false;
+            for (const existing of normalized) {
+                if (existing.startsWith(p)) {
+                    covered = true;
+                    break;
+                }
+            }
+            if (!covered) {
+                 normalized.add(p);
+            }
+        }
+    });
+    console.log("Normalized ignore patterns:", Array.from(normalized));
     return Array.from(normalized);
 }
 
+
 function shouldIgnore(relativePath: string, normalizedIgnores: string[]): boolean {
     const normRelativePath = path.normalize(relativePath).replace(/\\/g, '/');
+
     if (normRelativePath === '') return false;
 
     for (const ignore of normalizedIgnores) {
         if (normRelativePath === ignore) return true;
-        if (normRelativePath.startsWith(ignore + '/')) return true;
+        if (ignore.endsWith('/') && normRelativePath.startsWith(ignore)) return true;
+        if (!ignore.endsWith('/') && normRelativePath.startsWith(ignore + '/')) return true;
+
     }
     return false;
 }
@@ -73,32 +93,50 @@ async function walkDirectory(
     dirUri: vscode.Uri,
     basePath: string,
     normalizedIgnores: string[],
-    outputCollector: string[]
+    outputCollector: string[],
+    processedFiles: Set<string>
 ): Promise<void> {
     try {
         const entries = await vscode.workspace.fs.readDirectory(dirUri);
+        entries.sort((a, b) => {
+            const aIsDir = a[1] === vscode.FileType.Directory;
+            const bIsDir = b[1] === vscode.FileType.Directory;
+            if (aIsDir !== bIsDir) {
+                return aIsDir ? -1 : 1;
+            }
+            return a[0].localeCompare(b[0]);
+        });
+
         for (const [name, type] of entries) {
             const currentUri = vscode.Uri.joinPath(dirUri, name);
             const relativePath = path.relative(basePath, currentUri.fsPath);
+            const relativePathStd = relativePath.replace(/\\/g, '/');
 
-            if (shouldIgnore(relativePath, normalizedIgnores)) {
+            if (shouldIgnore(relativePathStd, normalizedIgnores)) {
                 continue;
             }
 
             if (type === vscode.FileType.File) {
-                const content = await readFileContent(currentUri);
-                if (content !== null) {
-                    const relativePathStd = relativePath.replace(/\\/g, '/');
-                    const ext = path.extname(currentUri.fsPath).toLowerCase().substring(1);
-                    const lang = ext || 'text';
-                    outputCollector.push(`${relativePathStd}\n\`\`\`${lang}\n${content}\n\`\`\`\n`);
+                if (!processedFiles.has(relativePathStd)) {
+                    const content = await readFileContent(currentUri);
+                    if (content !== null) {
+                        const ext = path.extname(currentUri.fsPath).toLowerCase().substring(1);
+                        const lang = ext || 'text';
+                        outputCollector.push(`${relativePathStd}\n\`\`\`${lang}\n${content}\n\`\`\`\n`);
+                        processedFiles.add(relativePathStd);
+                    }
                 }
             } else if (type === vscode.FileType.Directory) {
-                await walkDirectory(currentUri, basePath, normalizedIgnores, outputCollector);
+                await walkDirectory(currentUri, basePath, normalizedIgnores, outputCollector, processedFiles);
             }
         }
     } catch (error) {
-        vscode.window.showErrorMessage(`Error reading directory ${dirUri.fsPath}: ${error}`);
+        console.error(`Error reading directory ${dirUri.fsPath}: ${error}`);
+        if (error instanceof vscode.FileSystemError && error.code === 'NoPermissions') {
+            console.warn(`Permission denied for directory: ${dirUri.fsPath}`);
+        } else {
+            vscode.window.showErrorMessage(`Error reading directory ${dirUri.fsPath}: ${error}`);
+        }
     }
 }
 
@@ -107,8 +145,13 @@ export async function generateContext(
     previousContextUri: vscode.Uri | undefined
 ): Promise<vscode.Uri | undefined> {
     const { workspaceRoot, selectedPaths, ignorePatterns: rawIgnores } = options;
-    const normalizedIgnores = normalizeIgnorePatterns(workspaceRoot, rawIgnores);
+
+    const defaultIgnores = vscode.workspace.getConfiguration('projectContextBuilder').get<string[]>('defaultIgnorePatterns', []);
+    const combinedIgnores = [...defaultIgnores, ...rawIgnores];
+    const normalizedIgnores = normalizeIgnorePatterns(workspaceRoot, combinedIgnores);
+
     const outputCollector: string[] = [];
+    const processedFiles = new Set<string>();
     let generatedUri: vscode.Uri | undefined = undefined;
 
     await vscode.window.withProgress({
@@ -120,33 +163,49 @@ export async function generateContext(
 
         let processedCount = 0;
         const totalSelected = selectedPaths.length;
+
         for (const itemPath of selectedPaths) {
             const itemUri = vscode.Uri.file(itemPath);
             const relativePath = path.relative(workspaceRoot, itemPath);
-            if (shouldIgnore(relativePath, normalizedIgnores)) continue;
+            const relativePathStd = relativePath.replace(/\\/g, '/');
+
+            if (shouldIgnore(relativePathStd, normalizedIgnores)) {
+                processedCount++;
+                progress.report({ increment: (processedCount / totalSelected) * 80, message: `Ignoring ${path.basename(itemPath)}...` });
+                continue;
+            }
+
             progress.report({ increment: (processedCount / totalSelected) * 80, message: `Processing ${path.basename(itemPath)}...` });
+
             try {
                 const stats = await vscode.workspace.fs.stat(itemUri);
+
                 if (stats.type === vscode.FileType.File) {
-                    const content = await readFileContent(itemUri);
-                    if (content !== null) {
-                        const relativePathStd = relativePath.replace(/\\/g, '/');
-                        const ext = path.extname(itemUri.fsPath).toLowerCase().substring(1);
-                        const lang = ext || 'text';
-                        outputCollector.push(`${relativePathStd}\n\`\`\`${lang}\n${content}\n\`\`\`\n`);
+                    if (!processedFiles.has(relativePathStd)) {
+                        const content = await readFileContent(itemUri);
+                        if (content !== null) {
+                            const ext = path.extname(itemUri.fsPath).toLowerCase().substring(1);
+                            const lang = ext || 'text';
+                            outputCollector.push(`${relativePathStd}\n\`\`\`${lang}\n${content}\n\`\`\`\n`);
+                            processedFiles.add(relativePathStd);
+                        }
                     }
-                } else {
-                    console.warn(`Skipping directory ${itemPath} to avoid duplication.`);
+                } else if (stats.type === vscode.FileType.Directory) {
+                    await walkDirectory(itemUri, workspaceRoot, normalizedIgnores, outputCollector, processedFiles);
                 }
             } catch (error) {
-                vscode.window.showErrorMessage(`Error processing ${itemPath}: ${error}`);
+                 console.error(`Error processing ${itemPath}: ${error}`);
             }
             processedCount++;
         }
 
+        progress.report({ increment: 85, message: "Finalizing output..." });
+
         if (outputCollector.length === 0) {
-            vscode.window.showWarningMessage("No files selected or found to include in the context.");
+            vscode.window.showWarningMessage("No files selected or found (after ignores) to include in the context.");
             generatedUri = undefined;
+            progress.report({ increment: 100, message: "No content generated." });
+            await new Promise(resolve => setTimeout(resolve, 1500));
             return;
         }
 
@@ -163,20 +222,29 @@ export async function generateContext(
 
         try {
             if (targetEditor) {
-                await targetEditor.edit(editBuilder => {
+                const success = await targetEditor.edit(editBuilder => {
                     const fullRange = new vscode.Range(
                         targetEditor!.document.positionAt(0),
                         targetEditor!.document.positionAt(targetEditor!.document.getText().length)
                     );
                     editBuilder.replace(fullRange, finalOutput);
                 });
-                await vscode.window.showTextDocument(targetEditor.document, {
-                    viewColumn: targetEditor.viewColumn,
-                    preview: false,
-                    preserveFocus: true
-                });
-                generatedUri = targetEditor.document.uri;
-                vscode.window.showInformationMessage('Project context updated.');
+
+                if (success) {
+                     if (!targetEditor.document.isUntitled) {
+                         await targetEditor.document.save();
+                     }
+                    await vscode.window.showTextDocument(targetEditor.document, {
+                        viewColumn: targetEditor.viewColumn,
+                        preview: false,
+                        preserveFocus: true
+                    });
+                    generatedUri = targetEditor.document.uri;
+                    vscode.window.showInformationMessage('Project context updated successfully.');
+                } else {
+                     throw new Error("Editor edit operation failed.");
+                }
+
             } else {
                 const doc = await vscode.workspace.openTextDocument({
                     content: finalOutput,
@@ -184,11 +252,14 @@ export async function generateContext(
                 });
                 await vscode.window.showTextDocument(doc, { preview: false });
                 generatedUri = doc.uri;
+                const lastGeneratedContextUri = generatedUri;
                 vscode.window.showInformationMessage('Project context generated and opened.');
             }
             progress.report({ increment: 100, message: "Done!" });
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 500));
+
         } catch (error) {
+            console.error(`Failed to display generated context: ${error}`);
             vscode.window.showErrorMessage(`Failed to display generated context: ${error}`);
             generatedUri = undefined;
         }
@@ -196,3 +267,5 @@ export async function generateContext(
 
     return generatedUri;
 }
+
+export declare function updateLastGeneratedUri(uri: vscode.Uri | undefined): void;
