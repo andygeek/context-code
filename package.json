@@ -2,7 +2,7 @@
   "name": "context-code",
   "displayName": "Context Code",
   "description": "A VS Code extension that allows you to concatenate code from multiple files in your project into a single context, making it easier to send to an AI for analysis, debugging, or suggestions.",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "publisher": "AndyGeek",
   "license": "MIT",
   "icon": "resources/logo.png",
@@ -23,8 +23,8 @@
       "activitybar": [
         {
           "id": "projectContextBuilder",
-          "title": "Project Context",
-          "icon": "resources/logo.png"
+          "title": "Context Code",
+          "icon": "resources/icon.png"
         }
       ]
     },
@@ -41,14 +41,24 @@
     "commands": [
       {
         "command": "projectContextBuilder.generate",
-        "title": "Generate Project Context",
+        "title": "Generate Context",
         "icon": "$(file-code)"
+      },
+      {
+        "command": "projectContextBuilder.collapse",
+        "title": "Collapse Folders in Explorer",
+        "icon": "$(collapse-all)"
       }
     ],
     "menus": {
       "view/title": [
         {
           "command": "projectContextBuilder.generate",
+          "when": "view == projectFilesView",
+          "group": "navigation"
+        },
+        {
+          "command": "projectContextBuilder.collapse",
           "when": "view == projectFilesView",
           "group": "navigation"
         }
@@ -59,7 +69,14 @@
       "properties": {
         "projectContextBuilder.ignorePatterns": {
           "type": "array",
-          "default": [".git", "node_modules", ".vscode", "*.log", "dist", "build"],
+          "default": [
+            ".git",
+            "node_modules",
+            ".vscode",
+            "*.log",
+            "dist",
+            "build"
+          ],
           "description": "Array of glob patterns or relative paths to ignore when generating context. Uses forward slashes '/'."
         }
       }
@@ -72,17 +89,19 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
-    "package": "vsce package"
+    "package": "vsce package",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
   },
   "devDependencies": {
-    "@types/vscode": "^1.98.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
+    "@types/vscode": "^1.98.0",
     "@typescript-eslint/eslint-plugin": "^8.28.0",
     "@typescript-eslint/parser": "^8.28.0",
-    "eslint": "^9.23.0",
-    "typescript": "^5.8.2",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.23.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2"
   }
 }
