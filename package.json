@@ -2,7 +2,7 @@
   "name": "context-code",
   "displayName": "Context Code",
   "description": "A VS Code extension that allows you to concatenate code from multiple files in your project into a single context, making it easier to send to an AI for analysis, debugging, or suggestions.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "publisher": "AndyGeek",
   "license": "MIT",
   "icon": "resources/logo.png",
@@ -48,6 +48,10 @@
         "command": "projectContextBuilder.collapse",
         "title": "Collapse Folders in Explorer",
         "icon": "$(collapse-all)"
+      },
+      {
+        "command": "extension.menuGenerateContext",
+        "title": "Generate Context"
       }
     ],
     "menus": {
@@ -61,6 +65,13 @@
           "command": "projectContextBuilder.collapse",
           "when": "view == projectFilesView",
           "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "extension.menuGenerateContext",
+          "group": "z_commands",
+          "multiSelect": true
         }
       ]
     },

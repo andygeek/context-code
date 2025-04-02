@@ -1,35 +1,32 @@
 # Context Code
 
-Project Context Code is a Visual Studio Code extension that lets you generate a comprehensive context of your project by selecting files and directories. It produces a Markdown document containing the contents of the selected files.
+**Context Code** is a Visual Studio Code extension that helps you generate a clean, organized context of your project by combining the contents of selected files and folders into a single Markdown document — perfect for AI tools, documentation, or debugging.
 
-![](https://imgur.com/e3Fl4zr.gif)
+![](https://imgur.com/4URaTzn.gif)
 
 ## Features
 
-- **Tree View Navigation:** Browse your project files through a dedicated tree view in the Activity Bar.
-- **File & Folder Selection:** Easily select or deselect files and directories to include in your project context.
-- **Context Generation:** Generate a Markdown document with each selected file’s content formatted in code blocks.
-- **Ignore Patterns:** Customize ignore patterns (using glob syntax) to exclude unwanted files or directories (e.g., `.git`, `node_modules`).
-- **Live Updates:** The tree view automatically refreshes when files change in your workspace.
+- **Tree View Navigation:** Explore your project through a custom tree view in the Activity Bar.
+- **File & Folder Selection:** Select files and directories with checkbox toggles to include in your context.
+- **Explorer Integration:** Right-click any file or folder in the native VS Code explorer and generate context directly — no need to use the tree view.
+- **Context Generation:** Automatically creates a Markdown document, with file names and content wrapped in language-specific code blocks.
+- **Ignore Patterns:** Configure glob-based ignore patterns (e.g., `.git`, `node_modules`, `dist`) to skip irrelevant files.
+- **Live File Sync:** The file tree view updates in real time as your workspace changes.
 
 ## Usage
 
-1. **Open your project:** Make sure you have a folder or workspace open in VS Code.
+1. **Open a project folder** in VS Code.
 
-2. **Access the tree view:**  
-   - Navigate to the **Context Code** view in the Activity Bar.
-   - Use the **Select Files** tree to browse your project.
+2. **Select files and folders:**
+   - Via the **Context Code** view in the Activity Bar.
+   - Or, directly from the **Explorer** via right-click → `Generate Context`.
 
-3. **Select files or folders:**  
-   - Click on an item to toggle its selection.  
-   - The checkbox state will update accordingly.
-
-4. **Generate Context:**  
-   - Click on `Generate Project Context` in the tree view title button.
-   - A new Markdown document will open with the project context generated from your selection.
-   - If the document already exists, it will be updated with the new context.
-   - After generation, the file selection will be cleared to allow for a fresh selection next time.
+3. **Generate context:**
+   - Click `Generate Context` from the tree view, or use the context menu command.
+   - A Markdown file will open with the full content of the selected files.
+   - If the file is already open, it will be updated in-place.
 
 ## Contributing
 
-Contributions are welcome! Feel free to open issues or submit pull requests with improvements or bug fixes.
+Contributions are welcome!  
+If you have ideas, find bugs, or want to help improve the extension, feel free to open an issue or submit a pull request on [GitHub](https://github.com/andygeek/context-code).
