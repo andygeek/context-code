@@ -9,7 +9,7 @@
 - **Tree View Navigation:** Explore your project through a custom tree view in the Activity Bar.
 - **File & Folder Selection:** Select files and directories with checkbox toggles to include in your context.
 - **Explorer Integration:** Right-click any file or folder in the native VS Code explorer and generate context directly — no need to use the tree view.
-- **Context Generation:** Automatically creates a Markdown document, with file names and content wrapped in language-specific code blocks.
+- **Context Generation:** Now, instead of creating a separate Markdown file, the extension copies the generated context (with file names and content wrapped in language-specific code blocks) directly to your clipboard, making it even more convenient to paste into AI tools.
 - **Ignore Patterns:** Configure glob-based ignore patterns (e.g., `.git`, `node_modules`, `dist`) to skip irrelevant files.
 - **Live File Sync:** The file tree view updates in real time as your workspace changes.
 
@@ -23,8 +23,8 @@
 
 3. **Generate context:**
    - Click `Generate Context` from the tree view, or use the context menu command.
-   - A Markdown file will open with the full content of the selected files.
-   - If the file is already open, it will be updated in-place.
+   - The generated context is now automatically copied to your clipboard.
+   - Simply paste the context into your AI tool, documentation, or debugging environment.
 
 ## Contributing
 

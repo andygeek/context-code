@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.6.0]
+### Added
+- Instead of generating a separate file, the extension now copies the project context directly to the clipboard, making it easier to paste into AI tools.
+
 ## [0.5.0]
 ### Added
 - Added support for generating project context directly from the files or folders selected in the native VS Code explorer via the context menu.
