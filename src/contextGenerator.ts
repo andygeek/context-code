@@ -295,62 +295,14 @@ export async function generateContext(
       const finalOutput = outputCollector.join('\n');
       progress.report({ increment: 90, message: 'Updating editor...' });
 
-      let targetEditor: vscode.TextEditor | undefined = undefined;
-
-      if (previousContextUri) {
-        targetEditor = vscode.window.visibleTextEditors.find(
-          (editor) =>
-            editor.document.uri.toString() === previousContextUri.toString()
-        );
-      }
-
       try {
-        if (targetEditor) {
-          const success = await targetEditor.edit((editBuilder) => {
-            const fullRange = new vscode.Range(
-              targetEditor!.document.positionAt(0),
-              targetEditor!.document.positionAt(
-                targetEditor!.document.getText().length
-              )
-            );
-            editBuilder.replace(fullRange, finalOutput);
-          });
-
-          if (success) {
-            if (!targetEditor.document.isUntitled) {
-              await targetEditor.document.save();
-            }
-            await vscode.window.showTextDocument(targetEditor.document, {
-              viewColumn: targetEditor.viewColumn,
-              preview: false,
-              preserveFocus: true,
-            });
-            generatedUri = targetEditor.document.uri;
-            vscode.window.showInformationMessage(
-              'Project context updated successfully.'
-            );
-          } else {
-            throw new Error('Editor edit operation failed.');
-          }
-        } else {
-          const doc = await vscode.workspace.openTextDocument({
-            content: finalOutput,
-            language: 'markdown',
-          });
-          await vscode.window.showTextDocument(doc, { preview: false });
-          generatedUri = doc.uri;
-          vscode.window.showInformationMessage(
-            'Project context generated and opened.'
-          );
-        }
+        await vscode.env.clipboard.writeText(finalOutput);
+        vscode.window.showInformationMessage('Project context copied to clipboard.');
         progress.report({ increment: 100, message: 'Done!' });
         await new Promise((resolve) => setTimeout(resolve, 500));
       } catch (error) {
-        console.error(`Failed to display generated context: ${error}`);
-        vscode.window.showErrorMessage(
-          `Failed to display generated context: ${error}`
-        );
-        generatedUri = undefined;
+        console.error(`Error copying context to clipboard: ${error}`);
+        vscode.window.showErrorMessage(`Failed to copy project context: ${error}`);
       }
     }
   );

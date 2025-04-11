@@ -14,9 +14,7 @@ export function registerGenerateCommand(
       'projectContextBuilder.generate',
       async () => {
         if (!projectFilesProvider) {
-          vscode.window.showErrorMessage(
-            'ProjectFilesProvider not initialized.'
-          );
+          vscode.window.showErrorMessage('ProjectFilesProvider not initialized.');
           return;
         }
 
@@ -28,22 +26,19 @@ export function registerGenerateCommand(
           return;
         }
 
-        const config = vscode.workspace.getConfiguration(
-          'projectContextBuilder'
-        );
+        const config = vscode.workspace.getConfiguration('projectContextBuilder');
         const ignorePatterns = config.get<string[]>('ignorePatterns', []);
         const selectedPaths = Array.from(selectedItemsSet);
 
-        const newUri = await generateContext(
+        await generateContext(
           {
             workspaceRoot: rootPath,
             selectedPaths: selectedPaths,
             ignorePatterns: ignorePatterns,
           },
-          lastGeneratedContextUri
+          undefined
         );
 
-        lastGeneratedContextUri = newUri;
         projectFilesProvider.clearSelections();
       }
     )
