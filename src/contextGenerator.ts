@@ -8,6 +8,21 @@ interface GenerateContextOptions {
   ignorePatterns: string[];
 }
 
+async function loadGitIgnore(projectRoot: string): Promise<string[]> {
+  const gitIgnoreUri = vscode.Uri.joinPath(vscode.Uri.file(projectRoot), '.gitignore');
+  try {
+    const fileData = await vscode.workspace.fs.readFile(gitIgnoreUri);
+    const content = new TextDecoder('utf-8').decode(fileData);
+    const lines = content.split(/\r?\n/);
+    return lines
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#'));
+  } catch (error) {
+    console.log('No .gitignore file found or an error occurred while reading it:', error);
+    return [];
+  }
+}
+
 function normalizeIgnorePatterns(
   basePath: string,
   patterns: string[]
@@ -21,7 +36,9 @@ function normalizeIgnorePatterns(
 
     let relativePattern: string;
 
-    if (path.isAbsolute(pattern)) {
+    if (pattern.startsWith('/')) {
+      relativePattern = path.normalize(pattern.slice(1));
+    } else if (path.isAbsolute(pattern)) {
       const normPatternPath = path.normalize(pattern);
       if (normPatternPath.startsWith(normBasePath)) {
         relativePattern = path.relative(normBasePath, normPatternPath);
@@ -66,17 +83,27 @@ function shouldIgnore(
   if (normRelativePath === '') return false;
 
   for (const ignore of normalizedIgnores) {
-    if (normRelativePath === ignore) return true;
-    if (ignore.endsWith('/') && normRelativePath.startsWith(ignore))
+    if (
+      normRelativePath === ignore ||
+      (ignore.endsWith('/') && normRelativePath === ignore.slice(0, -1))
+    ) {
       return true;
-    if (!ignore.endsWith('/') && normRelativePath.startsWith(ignore + '/'))
+    }
+    if (ignore.endsWith('/') && normRelativePath.startsWith(ignore)) {
       return true;
+    }
+    if (!ignore.endsWith('/') && normRelativePath.startsWith(ignore + '/')) {
+      return true;
+    }
   }
   return false;
 }
 
 function shouldIgnoreFileByExtension(filePath: string): boolean {
-  const ignoredExts = new Set([
+  const config = vscode.workspace.getConfiguration('projectContextBuilder');
+  const userIgnoredExts = config.get<string[]>('ignoreFileExtensions', []);
+  
+  const defaultIgnoredExts = [
     '.ico',
     '.png',
     '.jpg',
@@ -86,7 +113,16 @@ function shouldIgnoreFileByExtension(filePath: string): boolean {
     '.bmp',
     '.tiff',
     '.webp',
-  ]);
+    '.bin',
+    '.jar',
+    '.lock',
+    '.probe'
+  ];
+  
+  // Combina ambas listas en un Set para evitar duplicados y para obtener mejor performance en la búsqueda
+  const ignoredExts = new Set([...defaultIgnoredExts, ...userIgnoredExts]);
+
+  // Asegura convertir la extensión del archivo a minúsculas para la comparación
   return ignoredExts.has(path.extname(filePath).toLowerCase());
 }
 
@@ -195,7 +231,14 @@ export async function generateContext(
   const defaultIgnores = vscode.workspace
     .getConfiguration('projectContextBuilder')
     .get<string[]>('defaultIgnorePatterns', []);
-  const combinedIgnores = [...defaultIgnores, ...rawIgnores];
+
+  // Se cargan los patrones desde .gitignore si existe en el proyecto.
+  const gitIgnorePatterns = await loadGitIgnore(workspaceRoot);
+  if (gitIgnorePatterns.length > 0) {
+    console.log('Patrones cargados desde .gitignore:', gitIgnorePatterns);
+  }
+  
+  const combinedIgnores = [...defaultIgnores, ...rawIgnores, ...gitIgnorePatterns];
   const normalizedIgnores = normalizeIgnorePatterns(
     workspaceRoot,
     combinedIgnores

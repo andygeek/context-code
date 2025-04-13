@@ -2,7 +2,7 @@
   "name": "context-code",
   "displayName": "Context Code",
   "description": "A VS Code extension that allows you to concatenate code from multiple files in your project into a single context, making it easier to send to an AI for analysis, debugging, or suggestions.",
-  "version": "0.6.0",
+  "version": "1.0.0",
   "publisher": "AndyGeek",
   "license": "MIT",
   "icon": "resources/logo.png",
@@ -19,54 +19,13 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "projectContextBuilder",
-          "title": "Context Code",
-          "icon": "resources/icon.png"
-        }
-      ]
-    },
-    "views": {
-      "projectContextBuilder": [
-        {
-          "id": "projectFilesView",
-          "name": "Select Files",
-          "type": "tree",
-          "icon": "resources/icon.svg"
-        }
-      ]
-    },
     "commands": [
-      {
-        "command": "projectContextBuilder.generate",
-        "title": "Generate Context",
-        "icon": "$(file-code)"
-      },
-      {
-        "command": "projectContextBuilder.collapse",
-        "title": "Collapse Folders in Explorer",
-        "icon": "$(collapse-all)"
-      },
       {
         "command": "extension.menuGenerateContext",
         "title": "Generate Context"
       }
     ],
     "menus": {
-      "view/title": [
-        {
-          "command": "projectContextBuilder.generate",
-          "when": "view == projectFilesView",
-          "group": "navigation"
-        },
-        {
-          "command": "projectContextBuilder.collapse",
-          "when": "view == projectFilesView",
-          "group": "navigation"
-        }
-      ],
       "explorer/context": [
         {
           "command": "extension.menuGenerateContext",
@@ -76,22 +35,37 @@
       ]
     },
     "configuration": {
-      "title": "Project Context Builder",
+      "type": "object",
+      "title": "Context Code Configuration",
       "properties": {
-        "projectContextBuilder.ignorePatterns": {
+        "projectContextBuilder.ignoreFileExtensions": {
           "type": "array",
           "default": [
-            ".git",
-            "node_modules",
-            ".vscode",
-            "*.log",
-            "dist",
-            "build"
+            ".ico",
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".svg",
+            ".bmp",
+            ".tiff",
+            ".webp",
+            ".bin",
+            ".jar",
+            ".lock",
+            ".probe"
           ],
-          "description": "Array of glob patterns or relative paths to ignore when generating context. Uses forward slashes '/'."
+            "description": "List of file extensions to be excluded from the project context."
         }
       }
-    }
+    },
+    "keybindings": [
+      {
+        "command": "extension.menuGenerateContext",
+        "key": "cmd+shift+9",
+        "mac": "cmd+shift+9"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
