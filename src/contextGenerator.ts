@@ -9,7 +9,10 @@ interface GenerateContextOptions {
 }
 
 async function loadGitIgnore(projectRoot: string): Promise<string[]> {
-  const gitIgnoreUri = vscode.Uri.joinPath(vscode.Uri.file(projectRoot), '.gitignore');
+  const gitIgnoreUri = vscode.Uri.joinPath(
+    vscode.Uri.file(projectRoot),
+    '.gitignore'
+  );
   try {
     const fileData = await vscode.workspace.fs.readFile(gitIgnoreUri);
     const content = new TextDecoder('utf-8').decode(fileData);
@@ -18,7 +21,10 @@ async function loadGitIgnore(projectRoot: string): Promise<string[]> {
       .map((line) => line.trim())
       .filter((line) => line && !line.startsWith('#'));
   } catch (error) {
-    console.log('No .gitignore file found or an error occurred while reading it:', error);
+    console.log(
+      'No .gitignore file found or an error occurred while reading it:',
+      error
+    );
     return [];
   }
 }
@@ -102,7 +108,7 @@ function shouldIgnore(
 function shouldIgnoreFileByExtension(filePath: string): boolean {
   const config = vscode.workspace.getConfiguration('projectContextBuilder');
   const userIgnoredExts = config.get<string[]>('ignoreFileExtensions', []);
-  
+
   const defaultIgnoredExts = [
     '.ico',
     '.png',
@@ -116,9 +122,9 @@ function shouldIgnoreFileByExtension(filePath: string): boolean {
     '.bin',
     '.jar',
     '.lock',
-    '.probe'
+    '.probe',
   ];
-  
+
   // Combina ambas listas en un Set para evitar duplicados y para obtener mejor performance en la búsqueda
   const ignoredExts = new Set([...defaultIgnoredExts, ...userIgnoredExts]);
 
@@ -237,8 +243,12 @@ export async function generateContext(
   if (gitIgnorePatterns.length > 0) {
     console.log('Patrones cargados desde .gitignore:', gitIgnorePatterns);
   }
-  
-  const combinedIgnores = [...defaultIgnores, ...rawIgnores, ...gitIgnorePatterns];
+
+  const combinedIgnores = [
+    ...defaultIgnores,
+    ...rawIgnores,
+    ...gitIgnorePatterns,
+  ];
   const normalizedIgnores = normalizeIgnorePatterns(
     workspaceRoot,
     combinedIgnores
@@ -340,12 +350,16 @@ export async function generateContext(
 
       try {
         await vscode.env.clipboard.writeText(finalOutput);
-        vscode.window.showInformationMessage('Project context copied to clipboard.');
+        vscode.window.showInformationMessage(
+          'Project context copied to clipboard.'
+        );
         progress.report({ increment: 100, message: 'Done!' });
         await new Promise((resolve) => setTimeout(resolve, 500));
       } catch (error) {
         console.error(`Error copying context to clipboard: ${error}`);
-        vscode.window.showErrorMessage(`Failed to copy project context: ${error}`);
+        vscode.window.showErrorMessage(
+          `Failed to copy project context: ${error}`
+        );
       }
     }
   );

@@ -1,7 +1,7 @@
 {
   "name": "context-code",
   "displayName": "Context Code",
-  "description": "A VS Code extension that allows you to concatenate code from multiple files in your project into a single context, making it easier to send to an AI for analysis, debugging, or suggestions.",
+  "description": "A VS Code extension that seamlessly aggregates code from multiple project files into a unified context, streamlining the process of sending it to AI for efficient analysis, debugging, and insightful suggestions.",
   "version": "1.0.0",
   "publisher": "AndyGeek",
   "license": "MIT",

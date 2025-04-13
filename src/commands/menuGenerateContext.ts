@@ -19,33 +19,41 @@ export function registerMenuGenerateContext(context: vscode.ExtensionContext) {
           if (activeEditor) {
             uris = [activeEditor.document.uri];
           } else {
-            vscode.window.showWarningMessage('No file or folder selected, or the command was executed without context.');
+            vscode.window.showWarningMessage(
+              'No file or folder selected, or the command was executed without context.'
+            );
             return;
           }
         }
 
         if (uris.length === 0) {
-          vscode.window.showWarningMessage('Could not determine the target file or folder.');
+          vscode.window.showWarningMessage(
+            'Could not determine the target file or folder.'
+          );
           return;
         }
 
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders || workspaceFolders.length === 0) {
-          vscode.window.showWarningMessage('Please open a folder or workspace.');
+          vscode.window.showWarningMessage(
+            'Please open a folder or workspace.'
+          );
           return;
         }
         const workspaceRoot = workspaceFolders[0].uri.fsPath;
 
-        const config = vscode.workspace.getConfiguration('projectContextBuilder');
+        const config = vscode.workspace.getConfiguration(
+          'projectContextBuilder'
+        );
         const ignorePatterns = config.get<string[]>('ignorePatterns', []);
 
-        const selectedPaths = uris.map(u => u.fsPath);
+        const selectedPaths = uris.map((u) => u.fsPath);
 
         const newUri = await generateContext(
           {
             workspaceRoot,
             selectedPaths,
-            ignorePatterns
+            ignorePatterns,
           },
           lastGeneratedContextUri
         );

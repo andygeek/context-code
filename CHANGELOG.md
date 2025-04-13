@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.0]
+### Added
+- The extension is now accessible only from the context menu in the native file explorer tree view.
+- You can now generate context for the entire project while automatically ignoring files and folders listed in the `.gitignore`, along with other irrelevant files.
+
 ## [0.6.0]
 ### Added
 - Instead of generating a separate file, the extension now copies the project context directly to the clipboard, making it easier to paste into AI tools.
