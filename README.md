@@ -2,7 +2,7 @@
 
 **Context Code** is a Visual Studio Code extension that helps you generate a clean, organized snapshot of your project's context. Now available exclusively via the native VS Code explorer context menu, it automatically combines and formats your project's file contents into a Markdown document optimized for AI tools, documentation, or debugging.
 
-![](https://imgur.com/4URaTzn.gif)
+![](https://imgur.com/yINJOdf.gif)
 
 ## Features
 
